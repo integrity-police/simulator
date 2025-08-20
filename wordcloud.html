@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результат очікувань</title>
+    <style>
+        body { margin: 0; font-family: system-ui, sans-serif; background-color: #0f172a; color: #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
+        #wordcloud { width: 90vw; height: 80vh; border: 1px solid rgba(255,255,255,0.1); }
+        h1 { margin-bottom: 20px; }
+        .loader { font-size: 1.5rem; }
+    </style>
+</head>
+<body>
+    <h1>Результат очікувань</h1>
+    <div id="wordcloud-container">
+        <canvas id="wordcloud"></canvas>
+    </div>
+    <div id="loader" class="loader">Завантаження даних...</div>
+
+    <!-- Підключення бібліотеки для створення хмари слів -->
+    <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
+    <script>
+        const SERVER_URL = "https://script.google.com/macros/s/AKfycbzD-sqCtJeMpI-ZqAp08IhR51_c8U7W2AwJt_Umth3Os0HXrI6BE_y4kQtMtUZ54PoFPA/exec";
+
+        async function fetchWords() {
+            try {
+                const response = await fetch(`${SERVER_URL}?action=getExpectations`);
+                const result = await response.json();
+                if (result.ok) {
+                    return result.text;
+                }
+                return "";
+            } catch (e) {
+                console.error("Error fetching words:", e);
+                return "";
+            }
+        }
+
+        function processText(text) {
+            const stopWords = new Set(["і", "в", "на", "що", "від", "та", "до", "не", "по", "за", "з", "у", "для", "а", "про", "як", "це", "я", "ми", "ви", "він", "вона", "воно", "вони", "бути", "або", "ще", "так", "ж", "би", "б"]);
+            const words = text.toLowerCase().match(/\b(\w+)\b/g) || [];
+            const frequencies = {};
+
+            words.forEach(word => {
+                if (word.length > 2 && !stopWords.has(word)) {
+                    frequencies[word] = (frequencies[word] || 0) + 1;
+                }
+            });
+
+            return Object.entries(frequencies).map(([text, weight]) => [text, weight]);
+        }
+
+        window.onload = async () => {
+            const loader = document.getElementById('loader');
+            const cloudContainer = document.getElementById('wordcloud-container');
+            const canvas = document.getElementById('wordcloud');
+
+            const allText = await fetchWords();
+            
+            loader.style.display = 'none';
+
+            if (!allText) {
+                cloudContainer.innerHTML = "<p>Ще немає даних для відображення.</p>";
+                return;
+            }
+
+            const wordList = processText(allText);
+
+            if (wordList.length === 0) {
+                cloudContainer.innerHTML = "<p>Недостатньо унікальних слів для створення хмари.</p>";
+                return;
+            }
+            
+            canvas.width = cloudContainer.offsetWidth;
+            canvas.height = cloudContainer.offsetHeight;
+
+            WordCloud(canvas, {
+                list: wordList,
+                gridSize: Math.round(16 * canvas.width / 1024),
+                weightFactor: (size) => Math.pow(size, 1.5) * canvas.width / 512,
+                fontFamily: 'system-ui, sans-serif',
+                color: 'random-light',
+                backgroundColor: '#0f172a',
+                rotateRatio: 0.5,
+                minSize: 10
+            });
+        };
+    </script>
+</body>
+</html>

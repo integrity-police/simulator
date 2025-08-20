@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Очікування від заходу</title>
+<style>
+  :root{--bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --primary:#3b82f6; --accent:#22c55e; --accent-weak:#16a34a; --danger:#ef4444;}
+  html,body{height:100%}
+  body{margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial; background:radial-gradient(1200px 600px at 10% -10%, #0b1220, #0f172a); color:var(--text); display:flex; align-items:center; justify-content:center; padding: clamp(12px, 4vw, 24px); box-sizing: border-box;}
+  .app{width:min(1000px,100%); background:rgba(11,18,32,.92); border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.5); overflow:hidden; z-index: 10;}
+  header{padding:18px 22px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:12px; align-items:center}
+  header .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center; background: radial-gradient(100% 100% at 10% 0%, var(--primary), #06b6d4); font-weight:700}
+  header h1{margin:0; font-size:18px}
+  header p{margin:0; color:var(--muted); font-size:13px}
+  main{padding:22px}
+  .card{background: rgba(2,6,23,.6); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:18px}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .muted{color:var(--muted)}
+  .btn{appearance:none; border:none; cursor:pointer; padding:10px 12px; border-radius:12px; background:#0b1324; color:var(--text); border:1px solid rgba(255,255,255,.08); text-align:left; transition:.15s ease}
+  .btn:hover{transform: translateY(-1px); border-color: rgba(255,255,255,.2)}
+  .btn.primary{background: linear-gradient(180deg, var(--primary), #2563eb); text-align:center; font-weight:700}
+  .btn:disabled{opacity: .6; cursor: not-allowed;}
+  input, select, textarea {
+    background:#0b1324; 
+    color:var(--text); 
+    border:1px solid rgba(255,255,255,.12); 
+    padding:10px 12px; 
+    border-radius:12px;
+    font-family: inherit;
+    font-size: 1rem;
+  }
+  textarea {
+      min-height: 120px;
+      resize: vertical;
+  }
+  #form-error { color: var(--danger); font-size: 14px; margin-top: 10px; display: none; }
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="logo">AC</div>
+      <div>
+        <h1>Очікування від заходу</h1>
+        <p class="muted">Збір зворотного зв'язку</p>
+      </div>
+    </header>
+    <main>
+      <div id="screen"></div>
+    </main>
+  </div>
+
+<script>
+const SERVER_URL = "https://script.google.com/macros/s/AKfycbzD-sqCtJeMpI-ZqAp08IhR51_c8U7W2AwJt_Umth3Os0HXrI6BE_y4kQtMtUZ54PoFPA/exec";
+const $ = s => document.querySelector(s);
+const screen = $("#screen");
+
+function getDepartmentOptions(selectedValue = "") {
+    const departments = [
+        "ГУНП в АРК та м. Севастополі", "ГУНП в Дніпропетровській області", "ГУНП в Донецькій області", "ГУНП в Житомирській області", "ГУНП в Закарпатській області", "ГУНП в Запорізькій області", "ГУНП в Івано-Франківській області", "ГУНП в Київській області", "ГУНП в Кіровоградській області", "ГУНП в Луганській області", "ГУНП в Миколаївській області", "ГУНП в Одеській області", "ГУНП в Полтавській області", "ГУНП в Рівненській області", "ГУНП в Сумській області", "ГУНП в Тернопільській області", "ГУНП в Харківській області", "ГУНП в Херсонській області", "ГУНП в Хмельницькій області", "ГУНП в Черкаській області", "ГУНП в Чернівецькій області", "ГУНП в Чернігівській області", "ГУНП у Вінницькій області", "ГУНП у Волинській області", "ГУНП у Львівській області", "ГУНП у м. Києві", "Департамент внутрішньої безпеки", "Департамент кіберполіції", "Департамент патрульної поліції", "Департамент поліції охорони", "Департамент стратегічних розслідувань", "ДЗ Академія патрульної поліції НПУ", "ДЗ Житомирська академія поліції", "ДЗ Криворізька академія патрульної поліції", "ДЗ Рівненська академія патрульної поліції", "ДПОП 'ОШБ' Лють", "ДУ Волинський навчальний центр підготовки поліцейських", "ДУ Центр авіаційного забезпечення НПУ", "ДУ ЦОП НПУ", "Центральний орган управління поліції"
+    ];
+    let optionsHtml = `<option value="" disabled selected>Оберіть ваш підрозділ</option>`;
+    departments.forEach(dept => {
+        optionsHtml += `<option value="${dept}">${dept}</option>`;
+    });
+    return optionsHtml;
+}
+
+function validateForm() {
+    const nameInput = $('#name');
+    const sessSelect = $('#sess');
+    const expectationText = $('#expectation');
+    const submitButton = $('#submitBtn');
+
+    if (!nameInput || !sessSelect || !expectationText || !submitButton) return;
+
+    const nameParts = nameInput.value.trim().split(/\s+/).filter(p => p.length > 0);
+    const isNameValid = nameParts.length >= 2;
+    const isSessValid = sessSelect.value !== '';
+    const isExpectationValid = expectationText.value.trim() !== '';
+
+    submitButton.disabled = !(isNameValid && isSessValid && isExpectationValid);
+}
+
+async function submitExpectation() {
+    const name = ($('#name')?.value || '').trim();
+    const session = ($('#sess')?.value || '');
+    const expectation = ($('#expectation')?.value || '').trim();
+    const errorDiv = $('#form-error');
+    const submitButton = $('#submitBtn');
+
+    errorDiv.style.display = 'none';
+    submitButton.disabled = true;
+    submitButton.textContent = 'Надсилання...';
+
+    let userIp = 'unknown';
+    try {
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        userIp = ipData.ip;
+    } catch (error) {
+        console.error('Could not fetch IP address:', error);
+        errorDiv.textContent = 'Не вдалося перевірити IP. Спробуйте ще раз.';
+        errorDiv.style.display = 'block';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Надіслати';
+        return;
+    }
+
+    // Перевірка на дублікат
+    const checkUrl = `${SERVER_URL}?action=check&dataType=expectation&session=${encodeURIComponent(session)}&ip=${encodeURIComponent(userIp)}`;
+    try {
+        const response = await fetch(checkUrl);
+        const result = await response.json();
+        if (result.ok && result.ipTaken) {
+            errorDiv.textContent = 'Ви вже надсилали очікування для цього підрозділу.';
+            errorDiv.style.display = 'block';
+            submitButton.disabled = false;
+            submitButton.textContent = 'Надіслати';
+            return;
+        }
+    } catch (error) {
+        console.error("Помилка перевірки:", error);
+    }
+
+    const payload = { dataType: 'expectation', name, session, expectation, ip: userIp };
+
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: {'Content-Type': 'text/plain'},
+            body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        if (result.ok) {
+            screen.innerHTML = `<div class="card" style="text-align: center;"><h2>Дякуємо!</h2><p class="muted">Вашу відповідь було збережено.</p><br><button class="btn" onclick="mainScreen()">Надіслати ще</button></div>`;
+        } else {
+            throw new Error('Server returned not ok');
+        }
+    } catch (e) {
+        errorDiv.textContent = 'Не вдалося надіслати дані. Спробуйте пізніше.';
+        errorDiv.style.display = 'block';
+        submitButton.disabled = false;
+        submitButton.textContent = 'Надіслати';
+    }
+}
+
+function mainScreen() {
+    screen.innerHTML = `
+        <div class="card">
+            <div class="row" style="justify-content:space-between">
+                <h2>Чого ви очікуєте від заходу?</h2>
+                <a href="wordcloud.html" target="_blank"><button class="btn">☁️ Результат очікувань</button></a>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin: 12px 0;">
+                <input id="name" placeholder="Ім'я та прізвище" />
+                <select id="sess" style="width: 100%;">${getDepartmentOptions()}</select>
+                <textarea id="expectation" placeholder="Напишіть ваші очікування тут..."></textarea>
+            </div>
+            <div class="row" style="gap:10px">
+                <button class="btn primary" id="submitBtn" onclick="submitExpectation()" disabled>Надіслати</button>
+            </div>
+            <div id="form-error"></div>
+        </div>
+    `;
+    $('#name').addEventListener('input', validateForm);
+    $('#sess').addEventListener('change', validateForm);
+    $('#expectation').addEventListener('input', validateForm);
+}
+
+mainScreen();
+</script>
+</body>
+</html>

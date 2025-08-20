@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Антикорупційний тренажер — повний комплект</title>
+<style>
+  :root{--bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --primary:#3b82f6; --accent:#22c55e; --accent-weak:#16a34a; --danger:#ef4444;}
+  html,body{height:100%}
+  body{margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Helvetica,Arial; background:radial-gradient(1200px 600px at 10% -10%, #0b1220, #0f172a); color:var(--text); display:flex; align-items:center; justify-content:center; padding: clamp(12px, 4vw, 24px); box-sizing: border-box;}
+  .app{width:min(1000px,100%); background:rgba(11,18,32,.92); border:1px solid rgba(255,255,255,.06); border-radius:16px; box-shadow:0 10px 40px rgba(0,0,0,.5); overflow:hidden; z-index: 10;}
+  header{padding:18px 22px; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:12px; align-items:center}
+  header .logo{width:36px;height:36px;border-radius:10px;display:grid;place-items:center; background: radial-gradient(100% 100% at 10% 0%, var(--primary), #06b6d4); font-weight:700}
+  header h1{margin:0; font-size:18px}
+  header p{margin:0; color:var(--muted); font-size:13px}
+  main{padding:22px}
+  .card{background: rgba(2,6,23,.6); border:1px solid rgba(255,255,255,.06); border-radius:14px; padding:18px}
+  .row{display:flex; gap:12px; flex-wrap:wrap; align-items:center}
+  .muted{color:var(--muted)}
+  .case{white-space:pre-wrap; line-height:1.5; color:#dbeafe; background:rgba(59,130,246,.08); border:1px solid rgba(59,130,246,.2); padding:12px; border-radius:12px;}
+  .question{font-size:18px; margin:14px 0 10px; font-weight:700}
+  .answers{display:grid; gap:10px; margin:12px 0;}
+  .btn{appearance:none; border:none; cursor:pointer; padding:10px 12px; border-radius:12px; background:#0b1324; color:var(--text); border:1px solid rgba(255,255,255,.08); text-align:left; transition:.15s ease}
+  .btn:hover{transform: translateY(-1px); border-color: rgba(255,255,255,.2)}
+  .btn.primary{background: linear-gradient(180deg, var(--primary), #2563eb); text-align:center; font-weight:700}
+  .btn:disabled{opacity: .6; cursor: not-allowed;}
+  .btn.block{width:100%}
+  .btn.correct{background:linear-gradient(180deg, var(--accent), var(--accent-weak)); border-color:transparent; color:#04120a}
+  .btn.wrong{background:linear-gradient(180deg, var(--danger), #b91c1c); border-color:transparent; color:#140404}
+  .chip{font-size:12px; color:var(--muted); background:rgba(148,163,184,.12); border:1px solid rgba(148,163,184,.25); padding:6px 10px; border-radius:999px}
+  .progress{height:8px; width:100%; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden}
+  .progress > div{height:100%; width:0; background:linear-gradient(90deg, #38bdf8, #6366f1); transition: width .25s ease}
+  .timebar{height:10px; width:100%; background:rgba(255,255,255,.08); border-radius:999px; overflow:hidden; border:1px solid rgba(255,255,255,.08)}
+  .timebar > div{height:100%; width:100%; background:linear-gradient(90deg, #22c55e, #f59e0b, #ef4444); transition: width 1s linear}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  @media (max-width: 760px){ .grid2{grid-template-columns:1fr} }
+  input, select{background:#0b1324; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:12px}
+  /* ОНОВЛЕНО: Додано стиль для приховування курсору */
+  input { caret-color: transparent; }
+  table{width:100%; border-collapse:collapse; margin-top:10px}
+  th, td{border-bottom:1px solid rgba(255,255,255,.06); padding:10px 8px; text-align:left; font-size:14px}
+  th{color:#c7d2fe}
+  #start-error { color: var(--danger); font-size: 14px; margin-top: 10px; display: none; }
+</style>
+
+<style id="ua-flag-wallpaper-text">
+body{
+  background-color:#0057B7 !important;
+  background-image: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%222400%22%20height%3D%221600%22%20viewBox%3D%220%200%202400%201600%22%3E%3Crect%20width%3D%222400%22%20height%3D%22800%22%20y%3D%220%22%20fill%3D%22%230057B7%22/%3E%3Crect%20width%3D%222400%22%20height%3D%22800%22%20y%3D%22800%22%20fill%3D%22%23FFD700%22/%3E%3C/svg%3E') !important;
+  background-size: cover !important;
+  background-attachment: fixed !important;
+  background-position: center center !important;
+}
+.footer-text {
+    position: fixed;
+    bottom: 20px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    font-size: clamp(0.6rem, 1.8vw, 1.2rem);
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    line-height: 1.4;
+    padding: 0 10px;
+    box-sizing: border-box;
+    z-index: 0;
+}
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <div class="logo">AC</div>
+      <div>
+        <h1>Антикорупційний тренажер — повний комплект</h1>
+        <p class="muted">Мультикористувацький • Таймер • Рейтинг (Google Sheets)</p>
+      </div>
+    </header>
+    <main>
+      <div id="screen"></div>
+    </main>
+  </div>
+
+  <div class="footer-text">
+    уповноважений підрозділ з питань запобігання та виявлення корупції<br>
+    Національної поліції України
+  </div>
+
+  <script src="questions.js"></script>
+
+<script>
+// ======= Параметри/утиліти =======
+const SERVER_URL = "https://script.google.com/macros/s/AKfycbzD-sqCtJeMpI-ZqAp08IhR51_c8U7W2AwJt_Umth3Os0HXrI6BE_y4kQtMtUZ54PoFPA/exec";
+const $ = s => document.querySelector(s);
+const screen = $("#screen");
+
+function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function getServerUrl(){ return SERVER_URL; }
+
+// ОНОВЛЕНО: Допоміжна функція для генерації списку підрозділів
+function getDepartmentOptions(selectedValue = "", placeholder = "Оберіть ваш підрозділ") {
+    const departments = [
+        "ГУНП в АРК та м. Севастополі", "ГУНП в Дніпропетровській області", "ГУНП в Донецькій області", "ГУНП в Житомирській області", "ГУНП в Закарпатській області", "ГУНП в Запорізькій області", "ГУНП в Івано-Франківській області", "ГУНП в Київській області", "ГУНП в Кіровоградській області", "ГУНП в Луганській області", "ГУНП в Миколаївській області", "ГУНП в Одеській області", "ГУНП в Полтавській області", "ГУНП в Рівненській області", "ГУНП в Сумській області", "ГУНП в Тернопільській області", "ГУНП в Харківській області", "ГУНП в Херсонській області", "ГУНП в Хмельницькій області", "ГУНП в Черкаській області", "ГУНП в Чернівецькій області", "ГУНП в Чернігівській області", "ГУНП у Вінницькій області", "ГУНП у Волинській області", "ГУНП у Львівській області", "ГУНП у м. Києві", "Департамент внутрішньої безпеки", "Департамент кіберполіції", "Департамент патрульної поліції", "Департамент поліції охорони", "Департамент стратегічних розслідувань", "ДЗ Академія патрульної поліції НПУ", "ДЗ Житомирська академія поліції", "ДЗ Криворізька академія патрульної поліції", "ДЗ Рівненська академія патрульної поліції", "ДПОП 'ОШБ' Лють", "ДУ Волинський навчальний центр підготовки поліцейських", "ДУ Центр авіаційного забезпечення НПУ", "ДУ ЦОП НПУ", "Центральний орган управління поліції"
+    ];
+    let optionsHtml = `<option value="" disabled ${!selectedValue ? "selected" : ""}>${placeholder}</option>`;
+    departments.forEach(dept => {
+        optionsHtml += `<option value="${dept}" ${selectedValue === dept ? "selected" : ""}>${dept}</option>`;
+    });
+    return optionsHtml;
+}
+
+async function postResult(payload){
+  const url = getServerUrl();
+  if (!url) return {ok:false, disabled:true};
+  try{
+    const res = await fetch(url, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain'},
+      body: JSON.stringify(payload)
+    });
+    return await res.json();
+  }catch(e){ return {ok:false, error:String(e)}}
+}
+
+async function getLeaderboard(session){
+  const url = getServerUrl();
+  if (!url) return {ok:false, disabled:true, rows:[]};
+  try{
+    const res = await fetch(url + "?action=getLeaderboard&session=" + encodeURIComponent(session||'default'));
+    return await res.json();
+  }catch(e){ return {ok:false, error:String(e), rows:[]};}
+}
+
+// ======= Стан =======
+let order = [], idx = 0, answersOrder = [], score = 0, timePerQuestion = 30, remaining = 0, timerId = null, playerName = "", sessionCode = "", isFinished = false;
+
+// ОНОВЛЕНО: Функція для валідації полів на стартовому екрані
+function validateStartForm() {
+    const nameInput = $('#name');
+    const sessSelect = $('#sess');
+    const startButton = $('#startBtn');
+
+    if (!nameInput || !sessSelect || !startButton) return;
+
+    const isNameValid = nameInput.value.trim() !== '';
+    const isSessValid = sessSelect.value !== '';
+
+    startButton.disabled = !(isNameValid && isSessValid);
+}
+
+function startScreen(){
+  screen.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <h2 style="margin:0 0 8px 0">Почнімо тренування</h2>
+          <div class="muted">Введіть ім'я та оберіть підрозділ, щоб почати.</div>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="leaderboardScreen()">🏆 Рейтинг</button>
+        </div>
+      </div>
+      <div class="grid2" style="margin:12px 0">
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <input id="name" placeholder="Ім'я та прізвище" />
+          <select id="sess" style="width: 100%;">
+            ${getDepartmentOptions(sessionCode, "Оберіть ваш підрозділ")}
+          </select>
+        </div>
+        <div class="row">
+          <label>⏱️ Ліміт на питання:&nbsp;
+            <select id="timeSel">
+              <option value="10">10 с</option>
+              <option value="20">20 с</option>
+              <option value="30" selected>30 с</option>
+              <option value="45">45 с</option>
+              <option value="60">60 с</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <div class="row" style="gap:10px">
+        <button class="btn primary" id="startBtn" onclick="startQuiz()" disabled>▶ Почати</button>
+      </div>
+      <div id="start-error"></div>
+      <div class="card" style="margin-top:12px">
+        <div class="muted">Бекенд підключено.</div>
+      </div>
+    </div>
+  `;
+  // ОНОВЛЕНО: Додаємо слухачів подій для валідації форми
+  $('#name').addEventListener('input', validateStartForm);
+  $('#sess').addEventListener('change', validateStartForm);
+}
+
+function leaderboardScreen(){
+  screen.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between; align-items: center;">
+        <div style="flex-grow: 1;">
+          <select id="sessBoard" style="width: 100%;" onchange="refreshBoard()">
+            ${getDepartmentOptions(sessionCode, "Оберіть підрозділ для перегляду")}
+          </select>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="startScreen()">← На головну</button>
+        </div>
+      </div>
+      <div id="board" style="margin-top:8px; min-height: 100px;"></div>
+    </div>
+  `;
+  refreshBoard();
+}
+
+async function refreshBoard(){
+  const board = $('#board');
+  const sessEl = $('#sessBoard');
+  const sess = sessEl ? sessEl.value : sessionCode || '';
+  
+  if (!sess) {
+      board.innerHTML = `<div class="muted">Оберіть підрозділ для перегляду рейтингу.</div>`;
+      return;
+  }
+  
+  board.innerHTML = `<div class="muted">Оновлення...</div>`;
+
+  const res = await getLeaderboard(sess);
+  
+  if (!res.ok){
+    board.innerHTML = `<div class="muted">Немає підключення до бекенду або сталася помилка.</div>`;
+    return;
+  }
+  const rows = res.rows || [];
+  if (rows.length === 0) {
+      board.innerHTML = `<div class="muted">Для цього підрозділу ще немає результатів.</div>`;
+      return;
+  }
+
+  let html = `<table>
+    <thead><tr><th>#</th><th>Ім'я</th><th>Бал</th><th>З питань</th><th>%</th><th>⏱</th><th>Час</th></tr></thead><tbody>`;
+  rows.forEach((r,i)=>{
+    html += `<tr>
+      <td>${i+1}</td><td>${r.name||''}</td><td>${r.score}</td><td>${r.total}</td>
+      <td>${Math.round(r.percent)}%</td><td>${r.timePerQuestion}s</td>
+      <td>${(r.timestamp||'').toString().replace('T',' ').replace('Z','')}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  board.innerHTML = html;
+}
+
+async function startQuiz(){
+  playerName = ($('#name')?.value || '').trim();
+  sessionCode = ($('#sess')?.value || '');
+  const errorDiv = $('#start-error');
+  const startButton = $('#startBtn');
+  errorDiv.style.display = 'none';
+
+  if (!playerName) {
+    errorDiv.textContent = "Будь ласка, введіть ім'я та прізвище.";
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if (!sessionCode) {
+    errorDiv.textContent = "Будь ласка, оберіть ваш підрозділ.";
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  startButton.disabled = true;
+  startButton.textContent = 'Перевірка...';
+
+  let userIp = 'unknown';
+  try {
+    const ipResponse = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipResponse.json();
+    userIp = ipData.ip;
+  } catch (error) {
+    console.error('Could not fetch IP address:', error);
+    errorDiv.textContent = 'Не вдалося перевірити IP. Спробуйте ще раз.';
+    errorDiv.style.display = 'block';
+    startButton.disabled = false;
+    startButton.textContent = '▶ Почати';
+    return;
+  }
+
+  const checkUrl = `${getServerUrl()}?action=check&session=${encodeURIComponent(sessionCode)}&ip=${encodeURIComponent(userIp)}`;
+  
+  try {
+    const response = await fetch(checkUrl);
+    const result = await response.json();
+
+    if (result.ok) {
+      if (result.ipTaken) {
+        errorDiv.textContent = `Тест вже було пройдено з вашої IP-адреси для цього підрозділу.`;
+        errorDiv.style.display = 'block';
+        startButton.disabled = false;
+        startButton.textContent = '▶ Почати';
+        return;
+      }
+    } else {
+        throw new Error(result.error || 'Unknown server error');
+    }
+  } catch (error) {
+    console.error("Помилка перевірки:", error);
+    errorDiv.textContent = 'Помилка під час перевірки. Спробуйте ще раз.';
+    errorDiv.style.display = 'block';
+    startButton.disabled = false;
+    startButton.textContent = '▶ Почати';
+    return;
+  }
+  
+  const sel = $("#timeSel");
+  if (sel) timePerQuestion = parseInt(sel.value, 10) || 30;
+
+  order = shuffle([...Array(DATA.length).keys()]);
+  idx = 0;
+  score = 0;
+  answersOrder = order.map(() => shuffle([0,1,2,3]));
+  isFinished = false;
+  renderQuestion();
+}
+
+function setupTimer(){
+  clearTimer();
+  remaining = timePerQuestion;
+  updateTimerUI();
+  timerId = setInterval(()=>{
+    remaining--;
+    if (remaining <= 0){ clearTimer(); timeUp(); }
+    else updateTimerUI();
+  }, 1000);
+}
+
+function clearTimer(){ if (timerId){ clearInterval(timerId); timerId = null; } }
+
+function updateTimerUI(){
+  const chip = $("#timeChip");
+  const bar = $("#timeBar");
+  if (chip) chip.textContent = `⏳ Залишилось: ${remaining} с`;
+  if (bar){ const pct = Math.max(0, Math.min(100, Math.round((remaining/timePerQuestion)*100))); bar.style.width = pct + "%"; }
+}
+
+function renderQuestion(){
+  const i = order[idx];
+  const item = DATA[i];
+  const map = answersOrder[idx];
+  const answers = map.map(m => item.a[m]);
+  const progressPct = Math.round((idx)/DATA.length*100);
+  screen.innerHTML = `
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="row">
+          <div class="chip">Завдання ${idx+1} / ${DATA.length}</div>
+          <div class="chip">Балів: ${score}</div>
+          <div class="chip" id="timeChip">⏳ Залишилось: -- с</div>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="leaderboardScreen()">🏆 Рейтинг</button>
+          <button class="btn" onclick="startScreen()">↺ Скинути</button>
+        </div>
+      </div>
+      <div class="progress" style="margin:10px 0 8px;"><div style="width:${progressPct}%"></div></div>
+      <div class="timebar" style="margin:6px 0 16px;"><div id="timeBar"></div></div>
+      <div class="case">${item.case}</div>
+      <div class="question">${item.q}</div>
+      <div class="answers">
+        ${answers.map((t, k)=>`<button class="btn" id="ans_${k}" onclick="selectAnswer(${k})">${k+1}) ${t}</button>`).join("")}
+      </div>
+      <div id="feedback" style="display:none; gap:12px; margin-top:8px"></div>
+      <div class="row" style="justify-content:space-between; margin-top:8px">
+        <div class="muted">Обирайте відповідь до завершення часу</div>
+        <div class="row">
+          <button class="btn" onclick="prev()" title="Назад">← Назад</button>
+          <button class="btn primary" onclick="skip()">Пропустити</button>
+          <button class="btn" onclick="next()">Далі →</button>
+        </div>
+      </div>
+    </div>
+  `;
+  setupTimer();
+}
+
+function disableButtonsAndReveal(correctShownIndex, clickedIndex){
+  for(let b=0;b<4;b++){
+    const el = document.getElementById(`ans_${b}`);
+    if (!el) continue;
+    el.disabled = true;
+    if (b === correctShownIndex) el.classList.add("correct");
+    if (clickedIndex !== null && b === clickedIndex && clickedIndex !== correctShownIndex) el.classList.add("wrong");
+  }
+}
+
+function showFeedback(msg){
+  const fb = $("#feedback");
+  if (!fb) return;
+  fb.style.display = "block";
+  fb.innerHTML = `<div class="case" style="background:rgba(34,197,94,.08); border-color:rgba(34,197,94,.25); color:#d1fae5">${msg}</div>`;
+}
+
+function selectAnswer(k){
+  clearTimer();
+  const i = order[idx];
+  const item = DATA[i];
+  const map = answersOrder[idx];
+  const correctShownIndex = map.indexOf(item.correct);
+  const isCorrect = (k === correctShownIndex);
+  disableButtonsAndReveal(correctShownIndex, k);
+  if (isCorrect) score++;
+  showFeedback((isCorrect ? "✔ Правильно!" : "✘ Неправильно.") + " " + item.explain);
+}
+
+function timeUp(){
+  const i = order[idx];
+  const item = DATA[i];
+  const map = answersOrder[idx];
+  const correctShownIndex = map.indexOf(item.correct);
+  disableButtonsAndReveal(correctShownIndex, null);
+  showFeedback("⏰ Час вийшов. " + item.explain);
+}
+
+function skip(){ clearTimer(); timeUp(); }
+function prev(){ if (idx<=0) return; clearTimer(); idx--; renderQuestion(); }
+function next(){ clearTimer(); idx++; if (idx >= DATA.length) return finish(); renderQuestion(); }
+
+async function finish(){
+  if (isFinished) return;
+  isFinished = true;
+  screen.innerHTML = `<div class="card"><h2 style="margin-top:0">Завершення</h2><p class="muted">Надсилаємо ваш результат...</p></div>`;
+  
+  let userIp = 'unknown';
+  try {
+    const ipResponse = await fetch('https://api.ipify.org?format=json');
+    const ipData = await ipResponse.json();
+    userIp = ipData.ip;
+  } catch (error) {
+    console.error('Could not fetch IP address:', error);
+  }
+
+  const pct = Math.round((score/DATA.length)*100);
+  const payload = { 
+    session: sessionCode, name: playerName, score, total: DATA.length, percent: pct, 
+    timePerQuestion, ip: userIp, userAgent: navigator.userAgent
+  };
+  const res = await postResult(payload);
+
+  screen.innerHTML = `
+    <div class="card">
+      <h2 style="margin-top:0">Результат</h2>
+      <p class="muted">Ви набрали <strong>${score}</strong> з ${DATA.length} (${pct}%).</p>
+      <div class="row" style="justify-content:space-between; margin-top:10px">
+        <div class="row">
+          <button class="btn primary" onclick="startQuiz()">Пройти ще раз</button>
+          <button class="btn" onclick="startScreen()">На головну</button>
+        </div>
+        <div class="row">
+          <button class="btn" onclick="leaderboardScreen()">🏆 Показати рейтинг</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:12px">
+        ${res?.ok ? "Результат збережено до Google Sheets." : "⚠️ Не вдалося надіслати результат. Перевірте підключення до мережі."}
+      </div>
+    </div>
+  `;
+}
+
+// init
+startScreen();
+</script>
+</body>
+</html>

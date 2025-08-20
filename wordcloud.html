@@ -39,7 +39,9 @@
 
         function processText(text) {
             const stopWords = new Set(["і", "в", "на", "що", "від", "та", "до", "не", "по", "за", "з", "у", "для", "а", "про", "як", "це", "я", "ми", "ви", "він", "вона", "воно", "вони", "бути", "або", "ще", "так", "ж", "би", "б"]);
-            const words = text.toLowerCase().match(/\b(\w+)\b/g) || [];
+            
+            // ОНОВЛЕНО: Виправлено регулярний вираз для підтримки українських літер
+            const words = text.toLowerCase().match(/\p{L}+/gu) || [];
             const frequencies = {};
 
             words.forEach(word => {

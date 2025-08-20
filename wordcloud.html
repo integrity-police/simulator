@@ -5,102 +5,176 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Результат очікувань</title>
     <style>
-        body { margin: 0; font-family: system-ui, sans-serif; background-color: #0f172a; color: #e5e7eb; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        #wordcloud { width: 90vw; height: 80vh; border: 1px solid rgba(255,255,255,0.1); }
-        h1 { margin-bottom: 20px; }
+        body { 
+            margin: 0; 
+            font-family: system-ui, sans-serif; 
+            background: linear-gradient(to bottom, #0057b7 50%, #ffd700 50%);
+            color: #e5e7eb; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 100vh; 
+        }
+        .content-wrapper {
+            background-color: rgba(15, 23, 42, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        #wordcloud { 
+            width: 85vw; 
+            height: 75vh;
+        }
+        h1 { 
+            margin-top: 0;
+            margin-bottom: 10px; 
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.7);
+        }
+        .controls { 
+            margin-bottom: 15px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 14px; 
+            color: #94a3b8;
+        }
+        .controls input { cursor: pointer; }
+        .controls label { cursor: pointer; }
         .loader { font-size: 1.5rem; }
         .error { color: #ef4444; }
     </style>
 </head>
 <body>
-    <h1>Результат очікувань</h1>
-    <div id="wordcloud-container">
-        <canvas id="wordcloud"></canvas>
+    <div class="content-wrapper">
+        <h1>Результат очікувань</h1>
+        
+        <div class="controls">
+            <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleWordCloudRefresh()" checked>
+            <label for="autoRefreshCheckbox">Автоматичне оновлення</label>
+        </div>
+
+        <div id="wordcloud-container">
+            <canvas id="wordcloud"></canvas>
+        </div>
+        <div id="loader" class="loader">Завантаження даних...</div>
     </div>
-    <div id="loader" class="loader">Завантаження даних...</div>
 
     <!-- Підключення бібліотеки для створення хмари слів -->
     <script src="https://cdn.jsdelivr.net/npm/wordcloud@1.2.2/src/wordcloud2.js"></script>
     <script>
         const SERVER_URL = "https://script.google.com/macros/s/AKfycbzD-sqCtJeMpI-ZqAp08IhR51_c8U7W2AwJt_Umth3Os0HXrI6BE_y4kQtMtUZ54PoFPA/exec";
+        let wordCloudInterval = null;
 
-        async function fetchWords() {
-            try {
-                const response = await fetch(`${SERVER_URL}?action=getExpectations`);
-                const result = await response.json();
-                if (result.ok) {
-                    return result.text;
-                }
-                return "";
-            } catch (e) {
-                console.error("Error fetching words:", e);
-                return "";
+        function clearWordCloudInterval() {
+            if (wordCloudInterval) {
+                clearInterval(wordCloudInterval);
+                wordCloudInterval = null;
             }
         }
 
-        function processText(text) {
-            const stopWords = new Set(["і", "в", "на", "що", "від", "та", "до", "не", "по", "за", "з", "у", "для", "а", "про", "як", "це", "я", "ми", "ви", "він", "вона", "воно", "вони", "бути", "або", "ще", "так", "ж", "би", "б"]);
-            
-            const words = text.toLowerCase().match(/\p{L}+/gu) || [];
-            const frequencies = {};
+        function toggleWordCloudRefresh() {
+            const checkbox = document.getElementById('autoRefreshCheckbox');
+            clearWordCloudInterval();
+            if (checkbox && checkbox.checked) {
+                wordCloudInterval = setInterval(() => renderWordCloud(false), 5000);
+            }
+        }
 
-            words.forEach(word => {
-                if (word.length > 2 && !stopWords.has(word)) {
-                    frequencies[word] = (frequencies[word] || 0) + 1;
+        async function fetchPhrases() {
+            try {
+                const response = await fetch(`${SERVER_URL}?action=getExpectations`);
+                const result = await response.json();
+                if (result.ok && Array.isArray(result.phrases)) {
+                    return result.phrases;
+                }
+                return [];
+            } catch (e) {
+                console.error("Error fetching phrases:", e);
+                return [];
+            }
+        }
+
+        // ОНОВЛЕНО: Функція тепер рахує цілі фрази
+        function processPhrases(phrases) {
+            const frequencies = {};
+            phrases.forEach(phrase => {
+                const cleanedPhrase = phrase.trim().toLowerCase();
+                if (cleanedPhrase) {
+                    frequencies[cleanedPhrase] = (frequencies[cleanedPhrase] || 0) + 1;
                 }
             });
-
             return Object.entries(frequencies).map(([text, weight]) => [text, weight]);
         }
 
-        window.onload = async () => {
+        async function renderWordCloud(isInitialLoad = true) {
             const loader = document.getElementById('loader');
             const cloudContainer = document.getElementById('wordcloud-container');
-            const canvas = document.getElementById('wordcloud');
+            
+            if (isInitialLoad) {
+                loader.style.display = 'block';
+                loader.textContent = 'Завантаження даних...';
+                cloudContainer.style.display = 'none';
+            }
 
-            // ОНОВЛЕНО: Перевірка, чи бібліотека завантажилась
             if (typeof WordCloud !== 'function') {
                 loader.textContent = 'Помилка: не вдалося завантажити бібліотеку для хмари слів.';
                 loader.classList.add('error');
                 cloudContainer.style.display = 'none';
+                clearWordCloudInterval();
                 return;
             }
 
-            const allText = await fetchWords();
+            const allPhrases = await fetchPhrases();
             
-            loader.style.display = 'none';
+            if (isInitialLoad) {
+                loader.style.display = 'none';
+                cloudContainer.style.display = 'block';
+            }
 
-            if (!allText) {
+            if (!allPhrases || allPhrases.length === 0) {
                 cloudContainer.innerHTML = "<p>Ще немає даних для відображення.</p>";
                 return;
             }
 
-            const wordList = processText(allText);
+            const phraseList = processPhrases(allPhrases);
 
-            if (wordList.length === 0) {
-                cloudContainer.innerHTML = "<p>Недостатньо унікальних слів для створення хмари.</p>";
+            if (phraseList.length === 0) {
+                cloudContainer.innerHTML = "<p>Недостатньо даних для створення хмари.</p>";
                 return;
             }
             
-            canvas.width = cloudContainer.offsetWidth;
-            canvas.height = cloudContainer.offsetHeight;
+            cloudContainer.innerHTML = '<canvas id="wordcloud"></canvas>';
+            const newCanvas = document.getElementById('wordcloud');
+            newCanvas.width = cloudContainer.offsetWidth;
+            newCanvas.height = cloudContainer.offsetHeight;
 
-            // ОНОВЛЕНО: Додано try-catch та спрощено опції для надійності
             try {
-                WordCloud(canvas, {
-                    list: wordList,
+                WordCloud(newCanvas, {
+                    list: phraseList,
                     gridSize: 10,
                     weightFactor: 8,
                     fontFamily: 'system-ui, sans-serif',
                     color: 'random-light',
-                    backgroundColor: '#0f172a',
-                    rotateRatio: 0.3,
+                    backgroundColor: 'transparent',
+                    rotateRatio: 0, // Вимикаємо обертання для кращої читабельності фраз
                     minSize: 12
                 });
             } catch (e) {
                 console.error("Помилка при створенні WordCloud:", e);
                 cloudContainer.innerHTML = `<p class="error">Виникла помилка при створенні хмари слів. Спробуйте оновити сторінку.</p>`;
+                clearWordCloudInterval();
             }
+        }
+
+        window.onload = () => {
+            renderWordCloud(true);
+            toggleWordCloudRefresh();
+        };
+
+        window.onbeforeunload = () => {
+            clearWordCloudInterval();
         };
     </script>
 </body>

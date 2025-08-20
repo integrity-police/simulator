@@ -35,7 +35,6 @@
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   @media (max-width: 760px){ .grid2{grid-template-columns:1fr} }
   input, select{background:#0b1324; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:12px}
-  /* ОНОВЛЕНО: Додано стиль для приховування курсору */
   input { caret-color: transparent; }
   table{width:100%; border-collapse:collapse; margin-top:10px}
   th, td{border-bottom:1px solid rgba(255,255,255,.06); padding:10px 8px; text-align:left; font-size:14px}
@@ -99,12 +98,18 @@ const screen = $("#screen");
 function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 function getServerUrl(){ return SERVER_URL; }
 
-// ОНОВЛЕНО: Допоміжна функція для генерації списку підрозділів
-function getDepartmentOptions(selectedValue = "", placeholder = "Оберіть ваш підрозділ") {
+// ОНОВЛЕНО: Функція тепер приймає параметр includeAllOption
+function getDepartmentOptions(selectedValue = "", placeholder = "Оберіть ваш підрозділ", includeAllOption = false) {
     const departments = [
         "ГУНП в АРК та м. Севастополі", "ГУНП в Дніпропетровській області", "ГУНП в Донецькій області", "ГУНП в Житомирській області", "ГУНП в Закарпатській області", "ГУНП в Запорізькій області", "ГУНП в Івано-Франківській області", "ГУНП в Київській області", "ГУНП в Кіровоградській області", "ГУНП в Луганській області", "ГУНП в Миколаївській області", "ГУНП в Одеській області", "ГУНП в Полтавській області", "ГУНП в Рівненській області", "ГУНП в Сумській області", "ГУНП в Тернопільській області", "ГУНП в Харківській області", "ГУНП в Херсонській області", "ГУНП в Хмельницькій області", "ГУНП в Черкаській області", "ГУНП в Чернівецькій області", "ГУНП в Чернігівській області", "ГУНП у Вінницькій області", "ГУНП у Волинській області", "ГУНП у Львівській області", "ГУНП у м. Києві", "Департамент внутрішньої безпеки", "Департамент кіберполіції", "Департамент патрульної поліції", "Департамент поліції охорони", "Департамент стратегічних розслідувань", "ДЗ Академія патрульної поліції НПУ", "ДЗ Житомирська академія поліції", "ДЗ Криворізька академія патрульної поліції", "ДЗ Рівненська академія патрульної поліції", "ДПОП 'ОШБ' Лють", "ДУ Волинський навчальний центр підготовки поліцейських", "ДУ Центр авіаційного забезпечення НПУ", "ДУ ЦОП НПУ", "Центральний орган управління поліції"
     ];
     let optionsHtml = `<option value="" disabled ${!selectedValue ? "selected" : ""}>${placeholder}</option>`;
+    
+    // ОНОВЛЕНО: Додаємо опцію "Всі підрозділи" тільки якщо це потрібно
+    if (includeAllOption) {
+        optionsHtml += `<option value="all_departments" ${selectedValue === 'all_departments' ? "selected" : ""}>--- Всі підрозділи ---</option>`;
+    }
+
     departments.forEach(dept => {
         optionsHtml += `<option value="${dept}" ${selectedValue === dept ? "selected" : ""}>${dept}</option>`;
     });
@@ -136,7 +141,6 @@ async function getLeaderboard(session){
 // ======= Стан =======
 let order = [], idx = 0, answersOrder = [], score = 0, timePerQuestion = 30, remaining = 0, timerId = null, playerName = "", sessionCode = "", isFinished = false;
 
-// ОНОВЛЕНО: Функція для валідації полів на стартовому екрані
 function validateStartForm() {
     const nameInput = $('#name');
     const sessSelect = $('#sess');
@@ -166,7 +170,8 @@ function startScreen(){
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <input id="name" placeholder="Ім'я та прізвище" />
           <select id="sess" style="width: 100%;">
-            ${getDepartmentOptions(sessionCode, "Оберіть ваш підрозділ")}
+            <!-- ОНОВЛЕНО: Викликаємо без опції "Всі підрозділи" -->
+            ${getDepartmentOptions(sessionCode, "Оберіть ваш підрозділ", false)}
           </select>
         </div>
         <div class="row">
@@ -190,7 +195,6 @@ function startScreen(){
       </div>
     </div>
   `;
-  // ОНОВЛЕНО: Додаємо слухачів подій для валідації форми
   $('#name').addEventListener('input', validateStartForm);
   $('#sess').addEventListener('change', validateStartForm);
 }
@@ -201,7 +205,8 @@ function leaderboardScreen(){
       <div class="row" style="justify-content:space-between; align-items: center;">
         <div style="flex-grow: 1;">
           <select id="sessBoard" style="width: 100%;" onchange="refreshBoard()">
-            ${getDepartmentOptions(sessionCode, "Оберіть підрозділ для перегляду")}
+            <!-- ОНОВЛЕНО: Викликаємо З опцією "Всі підрозділи" -->
+            ${getDepartmentOptions(sessionCode, "Оберіть підрозділ для перегляду", true)}
           </select>
         </div>
         <div class="row">

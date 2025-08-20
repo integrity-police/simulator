@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Антикорупційний тренажер — повний комплект</title>
+<title>Антикорупційний тренажер — викривачі корупції</title>
 <style>
   :root{--bg:#0f172a; --card:#0b1220; --text:#e5e7eb; --muted:#94a3b8; --primary:#3b82f6; --accent:#22c55e; --accent-weak:#16a34a; --danger:#ef4444;}
   html,body{height:100%}
@@ -34,8 +34,18 @@
   .timebar > div{height:100%; width:100%; background:linear-gradient(90deg, #22c55e, #f59e0b, #ef4444); transition: width 1s linear}
   .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px}
   @media (max-width: 760px){ .grid2{grid-template-columns:1fr} }
-  input, select{background:#0b1324; color:var(--text); border:1px solid rgba(255,255,255,.12); padding:10px 12px; border-radius:12px}
-  input { caret-color: transparent; }
+  input, select{
+    background:#0b1324; 
+    color:var(--text); 
+    border:1px solid rgba(255,255,255,.12); 
+    padding:10px 12px; 
+    border-radius:12px;
+    caret-color: transparent; /* Приховуємо курсор за замовчуванням */
+  }
+  /* ОНОВЛЕНО: Показуємо курсор тільки в полі для імені */
+  input#name {
+    caret-color: auto; 
+  }
   table{width:100%; border-collapse:collapse; margin-top:10px}
   th, td{border-bottom:1px solid rgba(255,255,255,.06); padding:10px 8px; text-align:left; font-size:14px}
   th{color:#c7d2fe}
@@ -73,7 +83,7 @@ body{
     <header>
       <div class="logo">AC</div>
       <div>
-        <h1>Антикорупційний тренажер — повний комплект</h1>
+        <h1>Антикорупційний тренажер — викривачі корупції</h1>
         <p class="muted">Мультикористувацький • Таймер • Рейтинг (Google Sheets)</p>
       </div>
     </header>
@@ -98,14 +108,12 @@ const screen = $("#screen");
 function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
 function getServerUrl(){ return SERVER_URL; }
 
-// ОНОВЛЕНО: Функція тепер приймає параметр includeAllOption
 function getDepartmentOptions(selectedValue = "", placeholder = "Оберіть ваш підрозділ", includeAllOption = false) {
     const departments = [
         "ГУНП в АРК та м. Севастополі", "ГУНП в Дніпропетровській області", "ГУНП в Донецькій області", "ГУНП в Житомирській області", "ГУНП в Закарпатській області", "ГУНП в Запорізькій області", "ГУНП в Івано-Франківській області", "ГУНП в Київській області", "ГУНП в Кіровоградській області", "ГУНП в Луганській області", "ГУНП в Миколаївській області", "ГУНП в Одеській області", "ГУНП в Полтавській області", "ГУНП в Рівненській області", "ГУНП в Сумській області", "ГУНП в Тернопільській області", "ГУНП в Харківській області", "ГУНП в Херсонській області", "ГУНП в Хмельницькій області", "ГУНП в Черкаській області", "ГУНП в Чернівецькій області", "ГУНП в Чернігівській області", "ГУНП у Вінницькій області", "ГУНП у Волинській області", "ГУНП у Львівській області", "ГУНП у м. Києві", "Департамент внутрішньої безпеки", "Департамент кіберполіції", "Департамент патрульної поліції", "Департамент поліції охорони", "Департамент стратегічних розслідувань", "ДЗ Академія патрульної поліції НПУ", "ДЗ Житомирська академія поліції", "ДЗ Криворізька академія патрульної поліції", "ДЗ Рівненська академія патрульної поліції", "ДПОП 'ОШБ' Лють", "ДУ Волинський навчальний центр підготовки поліцейських", "ДУ Центр авіаційного забезпечення НПУ", "ДУ ЦОП НПУ", "Центральний орган управління поліції"
     ];
     let optionsHtml = `<option value="" disabled ${!selectedValue ? "selected" : ""}>${placeholder}</option>`;
     
-    // ОНОВЛЕНО: Додаємо опцію "Всі підрозділи" тільки якщо це потрібно
     if (includeAllOption) {
         optionsHtml += `<option value="all_departments" ${selectedValue === 'all_departments' ? "selected" : ""}>--- Всі підрозділи ---</option>`;
     }
@@ -148,7 +156,8 @@ function validateStartForm() {
 
     if (!nameInput || !sessSelect || !startButton) return;
 
-    const isNameValid = nameInput.value.trim() !== '';
+    const nameParts = nameInput.value.trim().split(/\s+/).filter(p => p.length > 0);
+    const isNameValid = nameParts.length >= 2;
     const isSessValid = sessSelect.value !== '';
 
     startButton.disabled = !(isNameValid && isSessValid);
@@ -170,18 +179,13 @@ function startScreen(){
         <div style="display: flex; flex-direction: column; gap: 10px;">
           <input id="name" placeholder="Ім'я та прізвище" />
           <select id="sess" style="width: 100%;">
-            <!-- ОНОВЛЕНО: Викликаємо без опції "Всі підрозділи" -->
             ${getDepartmentOptions(sessionCode, "Оберіть ваш підрозділ", false)}
           </select>
         </div>
         <div class="row">
           <label>⏱️ Ліміт на питання:&nbsp;
-            <select id="timeSel">
-              <option value="10">10 с</option>
-              <option value="20">20 с</option>
+            <select id="timeSel" disabled>
               <option value="30" selected>30 с</option>
-              <option value="45">45 с</option>
-              <option value="60">60 с</option>
             </select>
           </label>
         </div>
@@ -205,7 +209,6 @@ function leaderboardScreen(){
       <div class="row" style="justify-content:space-between; align-items: center;">
         <div style="flex-grow: 1;">
           <select id="sessBoard" style="width: 100%;" onchange="refreshBoard()">
-            <!-- ОНОВЛЕНО: Викликаємо З опцією "Всі підрозділи" -->
             ${getDepartmentOptions(sessionCode, "Оберіть підрозділ для перегляду", true)}
           </select>
         </div>
@@ -263,8 +266,9 @@ async function startQuiz(){
   const startButton = $('#startBtn');
   errorDiv.style.display = 'none';
 
-  if (!playerName) {
-    errorDiv.textContent = "Будь ласка, введіть ім'я та прізвище.";
+  const nameParts = playerName.split(/\s+/).filter(p => p.length > 0);
+  if (nameParts.length < 2) {
+    errorDiv.textContent = "Будь ласка, введіть коректні ім'я та прізвище (мінімум два слова).";
     errorDiv.style.display = 'block';
     return;
   }
@@ -317,8 +321,7 @@ async function startQuiz(){
     return;
   }
   
-  const sel = $("#timeSel");
-  if (sel) timePerQuestion = parseInt(sel.value, 10) || 30;
+  timePerQuestion = 30;
 
   order = shuffle([...Array(DATA.length).keys()]);
   idx = 0;

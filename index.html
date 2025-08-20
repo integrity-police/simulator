@@ -42,7 +42,6 @@
     border-radius:12px;
     caret-color: transparent; /* Приховуємо курсор за замовчуванням */
   }
-  /* ОНОВЛЕНО: Показуємо курсор тільки в полі для імені */
   input#name {
     caret-color: auto; 
   }
@@ -148,6 +147,14 @@ async function getLeaderboard(session){
 
 // ======= Стан =======
 let order = [], idx = 0, answersOrder = [], score = 0, timePerQuestion = 30, remaining = 0, timerId = null, playerName = "", sessionCode = "", isFinished = false;
+let leaderboardInterval = null;
+
+function clearLeaderboardInterval() {
+    if (leaderboardInterval) {
+        clearInterval(leaderboardInterval);
+        leaderboardInterval = null;
+    }
+}
 
 function validateStartForm() {
     const nameInput = $('#name');
@@ -164,6 +171,7 @@ function validateStartForm() {
 }
 
 function startScreen(){
+  clearLeaderboardInterval();
   screen.innerHTML = `
     <div class="card">
       <div class="row" style="justify-content:space-between">
@@ -203,27 +211,50 @@ function startScreen(){
   $('#sess').addEventListener('change', validateStartForm);
 }
 
+// ОНОВЛЕНО: Функція для керування авто-оновленням
+function toggleAutoRefresh() {
+    const checkbox = $('#autoRefreshCheckbox');
+    if (checkbox && checkbox.checked) {
+        if (!leaderboardInterval) {
+            leaderboardInterval = setInterval(() => refreshBoard(false), 5000);
+        }
+    } else {
+        clearLeaderboardInterval();
+    }
+}
+
 function leaderboardScreen(){
+  clearLeaderboardInterval();
   screen.innerHTML = `
     <div class="card">
-      <div class="row" style="justify-content:space-between; align-items: center;">
-        <div style="flex-grow: 1;">
-          <select id="sessBoard" style="width: 100%;" onchange="refreshBoard()">
+      <div class="row" style="justify-content:space-between; align-items: center; flex-wrap: wrap;">
+        <div style="flex-grow: 1; min-width: 300px;">
+          <select id="sessBoard" style="width: 100%;" onchange="refreshBoard(true)">
             ${getDepartmentOptions(sessionCode, "Оберіть підрозділ для перегляду", true)}
           </select>
         </div>
-        <div class="row">
+        <div class="row" style="gap: 15px;">
+          <div class="row" style="gap: 8px;">
+            <input type="checkbox" id="autoRefreshCheckbox" onchange="toggleAutoRefresh()" checked style="cursor: pointer;">
+            <label for="autoRefreshCheckbox" class="muted" style="cursor: pointer;">Автоматичне оновлення</label>
+          </div>
           <button class="btn" onclick="startScreen()">← На головну</button>
         </div>
       </div>
       <div id="board" style="margin-top:8px; min-height: 100px;"></div>
     </div>
   `;
-  refreshBoard();
+  refreshBoard(true);
+  toggleAutoRefresh(); // Запускаємо початковий стан
 }
 
-async function refreshBoard(){
+async function refreshBoard(isInitialLoad = false){
   const board = $('#board');
+  if (!board) {
+      clearLeaderboardInterval();
+      return;
+  }
+
   const sessEl = $('#sessBoard');
   const sess = sessEl ? sessEl.value : sessionCode || '';
   
@@ -232,9 +263,16 @@ async function refreshBoard(){
       return;
   }
   
-  board.innerHTML = `<div class="muted">Оновлення...</div>`;
+  if (isInitialLoad) {
+      board.innerHTML = `<div class="muted">Оновлення...</div>`;
+  }
 
   const res = await getLeaderboard(sess);
+  
+  if (!$('#board')) {
+      clearLeaderboardInterval();
+      return;
+  }
   
   if (!res.ok){
     board.innerHTML = `<div class="muted">Немає підключення до бекенду або сталася помилка.</div>`;
@@ -352,6 +390,7 @@ function updateTimerUI(){
 }
 
 function renderQuestion(){
+  clearLeaderboardInterval();
   const i = order[idx];
   const item = DATA[i];
   const map = answersOrder[idx];

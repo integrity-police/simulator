@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Чек-лист доброчесності — Валідація декларації</title>
+<style>
+/* ---------- AI-styled animated background ---------- */
+html,body{height:100%; margin:0}
+body{
+  font-family: Arial, Helvetica, sans-serif;
+  color:#0b1220;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, rgba(0,87,183,.25), transparent 60%),
+    radial-gradient(1200px 600px at 90% 110%, rgba(255,215,0,.25), transparent 60%),
+    linear-gradient(135deg,#0b1220,#0f172a);
+  overflow:hidden;
+}
+/* animated grid overlay */
+.bg-grid{
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.04) 0 1px, transparent 1px 60px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0 1px, transparent 1px 60px);
+  animation: drift 12s linear infinite;
+  opacity:.9;
+}
+@keyframes drift{
+  0%{transform:translate(0,0) scale(1)}
+  50%{transform:translate(-10px,-10px) scale(1.02)}
+  100%{transform:translate(0,0) scale(1)}
+}
+/* glowing nodes */
+.bg-nodes{
+  position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(10px 10px at 20% 30%, rgba(6,182,212,.8), transparent 60%),
+    radial-gradient(12px 12px at 70% 60%, rgba(99,102,241,.8), transparent 60%),
+    radial-gradient(8px 8px at 40% 80%, rgba(16,185,129,.8), transparent 60%);
+  filter: blur(10px);
+  opacity:.35;
+}
+/* ---------- Main container ---------- */
+.app{position:relative; z-index:1; padding:20px}
+.card{
+  background: rgba(255,255,255,.9);
+  border:1px solid rgba(0,0,0,.15);
+  border-radius:16px;
+  box-shadow: 0 14px 40px rgba(0,0,0,.25);
+  max-width:920px; margin:60px auto; padding:18px;
+}
+h1{margin:0 0 8px 0}
+.small{color:#475569}
+label{display:block; font-weight:700; margin:8px 0 6px}
+.row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+.input{
+  flex:1 1 520px;
+  display:flex; align-items:center; gap:10px;
+  background:#fff; border:1px solid rgba(0,0,0,.15); border-radius:12px; padding:10px 12px;
+  box-shadow: inset 0 0 0 rgba(0,0,0,0);
+}
+.input input{
+  flex:1; min-width:260px; border:0; outline:none; font-size:14px;
+}
+.btn{
+  appearance:none; border-radius:12px; border:1px solid rgba(0,0,0,.14);
+  padding:10px 14px; cursor:pointer; font-weight:700;
+  background:linear-gradient(180deg, #0b7bf2, #0a5fd6); color:#fff;
+  box-shadow:0 3px 0 rgba(0,0,0,.15), 0 10px 20px rgba(2,132,199,.25);
+  transition:transform .05s ease, box-shadow .2s ease;
+}
+.btn:active{transform:translateY(1px)}
+.status{margin-top:8px; font-size:13px}
+.badge{display:inline-block; padding:3px 8px; border-radius:999px; background:#eef; color:#0a5fd6; font-weight:700; font-size:12px}
+/* Animated robot emoji/SVG */
+.robot{
+  width:60px; height:60px; border-radius:14px;
+  display:flex; align-items:center; justify-content:center;
+  background: radial-gradient(circle at 30% 30%, #e2e8f0, #cbd5e1);
+  box-shadow: 0 10px 24px rgba(0,0,0,.25), inset 0 3px 6px rgba(255,255,255,.75);
+  animation: bob 2.2s ease-in-out infinite;
+  position:relative;
+}
+.robot:before{content:"🤖"; font-size:32px}
+.robot:after{
+  content:""; position:absolute; left:8px; right:8px; bottom:-8px; height:8px; border-radius:999px;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.25), transparent 60%);
+  filter: blur(2px); opacity:.6;
+}
+@keyframes bob{ 0%,100%{ transform: translateY(0)} 50%{ transform: translateY(-6px)} }
+/* ---------- Lock overlay ---------- */
+.lock{
+  position:fixed; inset:0; z-index:5;
+  background: radial-gradient(1200px 600px at 50% -10%, rgba(11,123,242,.25), transparent 60%), rgba(2,6,23,.92);
+  display:flex; align-items:center; justify-content:center;
+  backdrop-filter: none;
+}
+.lock-box{
+  width: min(92%, 420px);
+  background: rgba(255,255,255,.98);
+  border:1px solid rgba(0,0,0,.25);
+  border-radius:16px; padding:18px;
+  box-shadow: 0 20px 60px rgba(0,0,0,.45);
+  text-align:center;
+}
+.lock h2{margin:0 0 12px 0}
+.lock input{width:100%; padding:10px 12px; border-radius:12px; border:1px solid rgba(0,0,0,.2); font-size:14px}
+.lock .btn{width:100%; margin-top:10px}
+.lock .err{display:none; color:#b91c1c; margin-top:8px; font-weight:700}
+.shake{animation:shake .28s linear 1}
+@keyframes shake{ 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+.footer{margin-top:10px; font-size:12px; color:#475569}
+/* Responsive */
+@media (max-width:640px){
+  .row{flex-direction:column; align-items:stretch}
+  .robot{align-self:center; margin-top:8px}
+}
+</style>
+<noscript><div style="padding:10px;background:#7f1d1d;color:#fff">Для роботи застосунку увімкніть JavaScript.</div></noscript>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-nodes"></div>
+
+<!-- Lock overlay -->
+<div class="lock" id="lock">
+  <div class="lock-box" id="lockBox">
+    <h2>Доступ за паролем</h2>
+    <p class="small">Введіть пароль для відкриття застосунку.</p>
+    <input id="pwd" type="password" placeholder="Пароль" autocomplete="current-password" />
+    <button class="btn" id="unlockBtn" type="button">Відкрити</button>
+    <div class="err" id="lockErr">Невірний пароль</div>
+    <div class="footer">Підказка: дата у форматі ДД.ММ.РРРР</div>
+  </div>
+</div>
+
+<div class="app" id="app" style="display:none">
+  <div class="card">
+    <h1>Чек-лист доброчесності</h1>
+    <div class="small">Завантаж посилання на декларацію — система надішле його до Google Sheets</div>
+
+    <label for="url">Чек-лист доброчесності. Завантаж посилання на декларацію</label>
+    <div class="row">
+      <div class="input">
+        <span class="badge">URL</span>
+        <input id="url" type="url" placeholder="https://..." />
+      </div>
+      <button class="btn" id="sendBtn" type="button">Перевірити</button>
+      <div class="robot" title="AI assistant"></div>
+    </div>
+    <div class="status" id="status">Очікування дії…</div>
+  </div>
+</div>
+
+<script>
+"use strict";
+(function(){
+  function $(id){ return document.getElementById(id); }
+
+  /* ---------- Lock logic ---------- */
+  var PASS="26.08.2025"; // зашитий пароль
+  function openApp(){
+    var lock=$("lock"), app=$("app");
+    if(lock) lock.style.display="none";
+    if(app) app.style.display="";
+  }
+  var unlock = function(){
+    var v = ($("pwd") && $("pwd").value) || "";
+    if(v===PASS){ openApp(); } else { var b=$("lockBox"); if(b){ b.className+=" shake"; setTimeout(function(){ b.className=b.className.replace(/\s?shake/g,""); }, 280);} var e=$("lockErr"); if(e){ e.style.display="block"; } }
+  };
+  if($("unlockBtn")) $("unlockBtn").onclick = unlock;
+  if($("pwd")) $("pwd").onkeydown = function(ev){ ev=ev||window.event; if((ev.key&&ev.key==="Enter") || ev.keyCode===13){ unlock(); } };
+
+  /* ---------- Minimal Sheets integration (no UI settings) ---------- */
+  // Edit the constant below to your Apps Script URL (Web App), or leave empty to use local CSV fallback.
+  var ENDPOINT = ""; // "https://script.google.com/macros/s/DEPLOYMENT_ID/exec"
+  // Optional Google Form fallback (if set). Leave empty to skip.
+  var FORM_ACTION = ""; // "https://docs.google.com/forms/d/e/FORM_ID/formResponse"
+  var FORM_ENTRY = "";  // "entry.1234567890"
+
+  function setStatus(msg, ok){
+    var s=$("status"); if(!s) return;
+    s.innerHTML = (ok? "✅ " : "ℹ️ ") + msg;
+    s.style.color = ok? "#15803d" : "#0b1220";
+  }
+  function isHttpUrl(u){ return /^https?:\/\//i.test(u||""); }
+
+  function sendToAppsScript(link){
+    if(!isHttpUrl(ENDPOINT)){ return false; }
+    try{
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", ENDPOINT, true);
+      xhr.setRequestHeader("Content-Type","application/json;charset=UTF-8");
+      xhr.onreadystatechange = function(){
+        if(xhr.readyState===4){
+          if(xhr.status>=200 && xhr.status<300){
+            setStatus("Надіслано до Google Sheets через Apps Script.", true);
+          } else {
+            setStatus("Помилка відправлення до Apps Script: "+xhr.status, false);
+          }
+        }
+      };
+      var body = JSON.stringify({ link: link, note: "Чек-лист доброчесності", ua: navigator.userAgent });
+      xhr.send(body);
+      return true;
+    }catch(e){ setStatus("Виняток під час відправлення: "+e.message, false); return false; }
+  }
+  function sendToGoogleForm(link){
+    if(!isHttpUrl(FORM_ACTION) || !FORM_ENTRY){ return false; }
+    try{
+      var xhr = new XMLHttpRequest();
+      xhr.open("POST", FORM_ACTION, true);
+      xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded;charset=UTF-8");
+      xhr.onreadystatechange = function(){
+        if(xhr.readyState===4){
+          if(xhr.status>=200 && xhr.status<400){
+            setStatus("Надіслано до Google Sheets через Google Form.", true);
+          } else {
+            setStatus("Помилка відправлення до Google Form: "+xhr.status, false);
+          }
+        }
+      };
+      var params = encodeURIComponent(FORM_ENTRY)+"="+encodeURIComponent(link);
+      xhr.send(params);
+      return true;
+    }catch(e){ setStatus("Виняток під час відправлення: "+e.message, false); return false; }
+  }
+
+  function saveLocalCSV(link){
+    try{
+      var row = [new Date().toISOString(), link].join(",") + "\\n";
+      var blob = new Blob([row], {type:"text/csv"});
+      var a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "declaration_link.csv";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function(){ URL.revokeObjectURL(a.href); document.body.removeChild(a); }, 0);
+      setStatus("Файл CSV з посиланням збережено локально (фолбек).", true);
+    }catch(e){ setStatus("Не вдалося зберегти CSV: "+e.message, false); }
+  }
+
+  if($("sendBtn")) $("sendBtn").onclick = function(){
+    var link = ($("url") && $("url").value) || "";
+    if(!isHttpUrl(link)){ setStatus("Вставте коректне посилання (починається з http/https).", false); return; }
+    // Try Apps Script; else Google Form; else local CSV fallback
+    var ok = sendToAppsScript(link);
+    if(!ok){ ok = sendToGoogleForm(link); }
+    if(!ok){ saveLocalCSV(link); }
+  };
+})();
+</script>
+</body>
+</html>
